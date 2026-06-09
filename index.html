@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Duck Quest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css?v=28" />
+  </head>
+  <body>
+    <section id="auth-screen" class="auth-screen" aria-label="Вход в Duck Quest">
+      <form id="auth-form" class="auth-card">
+        <img class="duck-sticker auth-duck" src="duck-sticker.png?v=party1" alt="" />
+        <p id="auth-eyebrow" class="case-id">Private Birthday Access</p>
+        <h1 id="auth-title">Вход в Duck Quest</h1>
+        <p id="auth-lead" class="lead">
+          Эта платформа открывается только главному имениннику. Введи личный логин и пароль,
+          чтобы начать дневной квест.
+        </p>
+        <label class="auth-field">
+          <span>Логин</span>
+          <input id="login-input" name="login" autocomplete="username" inputmode="text" />
+        </label>
+        <label class="auth-field">
+          <span>Пароль</span>
+          <input id="password-input" name="password" type="password" autocomplete="current-password" />
+        </label>
+        <p id="auth-error" class="auth-error" role="alert"></p>
+        <button class="primary-button" type="submit">Войти</button>
+      </form>
+    </section>
+
+    <main id="quest-app" class="app-shell" hidden>
+      <div class="face-garland" aria-hidden="true">
+        <div class="garland-cord"></div>
+        <div class="garland-track">
+          <div class="face-flag" style="--i: 0"><img src="assets/faces/face-01.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 1"><img src="assets/faces/face-02.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 2"><img src="assets/faces/face-03.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 3"><img src="assets/faces/face-04.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 4"><img src="assets/faces/face-05.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 5"><img src="assets/faces/face-06.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 6"><img src="assets/faces/face-07.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 7"><img src="assets/faces/face-08.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 8"><img src="assets/faces/face-09.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 9"><img src="assets/faces/face-10.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 10"><img src="assets/faces/face-11.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 11"><img src="assets/faces/face-12.png?v=bazaart1" alt="" /></div>
+          <div class="face-flag" style="--i: 12"><img src="assets/faces/face-13.png?v=bazaart1" alt="" /></div>
+        </div>
+      </div>
+
+      <section class="hero-panel" aria-label="Duck Quest">
+        <div id="hero-badge" class="app-badge">1 задание в час</div>
+        <div class="duck-bank" aria-live="polite">
+          <span>Утиный банк</span>
+          <strong><span id="duck-bank-count">0</span> уток</strong>
+        </div>
+        <div class="hero-copy">
+          <p id="hero-eyebrow" class="case-id">Birthday Duck Quest</p>
+          <h1 id="hero-title">По мотивам игры «Утиные истории 2025»</h1>
+          <p id="hero-lead" class="lead">
+            Проходи задания в течение дня. После каждого задания открывается
+            поздравительная карточка-артефакт, а следующая миссия станет доступна через час.
+          </p>
+          <div class="progress-card">
+            <div>
+              <span id="progress-label" class="panel-label">Прогресс дня</span>
+              <strong id="duck-count">0/5 уточек</strong>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <span id="progress-fill"></span>
+            </div>
+            <p id="next-unlock" class="timer-line">Первое задание уже открыто</p>
+          </div>
+        </div>
+
+        <div class="duck-stage">
+          <div class="tap-hint" aria-hidden="true">
+            <span>тап</span>
+            <i></i>
+          </div>
+          <button id="duck-clicker" class="duck-clicker" type="button" aria-label="Натапать уток в утиный банк">
+            <img class="duck-sticker hero-duck" src="duck-sticker.png?v=party1" alt="" />
+            <span id="duck-click-pop" class="duck-click-pop" aria-hidden="true">+1</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="tasks-panel" aria-label="Задания квеста">
+        <div class="section-heading">
+          <div>
+            <p id="tasks-eyebrow" class="panel-label">Маршрут</p>
+            <h2 id="tasks-title">Задания на день</h2>
+          </div>
+          <span id="task-count" class="task-counter">0 завершено</span>
+        </div>
+        <div id="task-grid" class="task-grid"></div>
+      </section>
+
+      <section class="gallery-panel" aria-label="Галерея артефактов">
+        <div class="section-heading">
+          <div>
+            <p id="gallery-eyebrow" class="panel-label">Галерея</p>
+            <h2 id="gallery-title">Карточки-артефакты</h2>
+          </div>
+          <button id="solve-button" class="primary-button" type="button" disabled>
+            Финальный подарок
+          </button>
+        </div>
+        <div id="artifact-gallery" class="artifact-gallery"></div>
+      </section>
+
+      <section id="editor-panel" class="editor-panel" aria-label="Редактор текстов" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="panel-label">Тестовый редактор</p>
+            <h2>Редактирование текстов</h2>
+          </div>
+          <span id="editor-status" class="task-counter">Сохранено</span>
+        </div>
+        <p class="editor-note">
+          Изменения сохраняются автоматически как итоговая версия для этого браузера и сразу
+          применяются в обычном режиме на этой же платформе.
+        </p>
+        <div id="editor-fields" class="editor-fields"></div>
+      </section>
+    </main>
+
+    <div id="task-dialog" class="dialog" role="dialog" aria-modal="true" hidden>
+      <div class="dialog-card">
+        <button id="close-task-dialog" class="icon-button" type="button" aria-label="Закрыть">
+          ×
+        </button>
+        <img class="duck-sticker mini-duck" src="duck-sticker.png?v=party1" alt="" />
+        <p id="dialog-step" class="panel-label"></p>
+        <h2 id="dialog-name"></h2>
+        <p id="dialog-statement" class="dialog-statement"></p>
+        <div class="quote-box">
+          <span id="task-dialog-label">Что сделать</span>
+          <p id="dialog-challenge"></p>
+        </div>
+        <form id="task-unlock-form" class="unlock-box">
+          <div id="unlock-game" class="unlock-game"></div>
+          <label class="unlock-field">
+            <span id="task-code-label">Кодовое слово</span>
+            <input id="task-code-input" name="task-code" autocomplete="off" />
+          </label>
+          <p id="task-code-help" class="unlock-help"></p>
+          <p id="task-code-feedback" class="unlock-feedback" role="alert"></p>
+          <button id="complete-task" class="primary-button" type="submit">
+            Проверить код
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div id="artifact-dialog" class="dialog" role="dialog" aria-modal="true" hidden>
+      <div class="dialog-card artifact-dialog-card">
+        <button id="close-artifact-dialog" class="icon-button" type="button" aria-label="Закрыть">
+          ×
+        </button>
+        <div id="artifact-card-preview"></div>
+        <div class="artifact-actions">
+          <button id="download-artifact" class="primary-button" type="button">
+            Сохранить PNG
+          </button>
+          <button id="close-artifact-secondary" class="ghost-button" type="button">
+            В галерею
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="finale" class="dialog finale" role="dialog" aria-modal="true" hidden>
+      <div class="dialog-card finale-card">
+        <button id="close-finale" class="icon-button" type="button" aria-label="Закрыть">
+          ×
+        </button>
+        <div class="final-ducks" aria-hidden="true">
+          <img class="duck-sticker mini-duck" src="duck-sticker.png?v=party1" alt="" />
+          <img class="duck-sticker mini-duck" src="duck-sticker.png?v=party1" alt="" />
+          <img class="duck-sticker mini-duck" src="duck-sticker.png?v=party1" alt="" />
+        </div>
+        <p id="finale-eyebrow" class="case-id">5/5 артефактов</p>
+        <h2 id="finale-title">Финальный подарок открыт</h2>
+        <p id="finale-lead">
+          Утиная комиссия подтверждает: именинник прошел дневной квест, собрал
+          все поздравления и заслужил главный сюрприз.
+        </p>
+        <div class="final-location">
+          <span id="finale-hint-label">Финальная подсказка</span>
+          <strong id="gift-location"></strong>
+        </div>
+        <p id="final-message" class="final-message"></p>
+      </div>
+    </div>
+
+    <script src="script.js?v=24"></script>
+  </body>
+</html>
