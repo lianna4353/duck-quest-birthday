@@ -16,12 +16,9 @@
     <section id="auth-screen" class="auth-screen" aria-label="Вход в Duck Quest">
       <form id="auth-form" class="auth-card">
         <img class="duck-sticker auth-duck" src="duck-sticker.png?v=party1" alt="" />
-        <p id="auth-eyebrow" class="case-id">Private Birthday Access</p>
-        <h1 id="auth-title">Вход в Duck Quest</h1>
-        <p id="auth-lead" class="lead">
-          Эта платформа открывается только главному имениннику. Введи личный логин и пароль,
-          чтобы начать дневной квест.
-        </p>
+        <p id="auth-eyebrow" class="case-id">Birthday Access</p>
+        <h1 id="auth-title">С днём рождения!</h1>
+        <p id="auth-lead" class="lead">Скорее заходи играть</p>
         <label class="auth-field">
           <span>Логин</span>
           <input id="login-input" name="login" autocomplete="username" inputmode="text" />
@@ -119,14 +116,14 @@
       <section id="editor-panel" class="editor-panel" aria-label="Редактор текстов" hidden>
         <div class="section-heading">
           <div>
-            <p class="panel-label">Тестовый редактор</p>
+            <p class="panel-label">Редактор</p>
             <h2>Редактирование текстов</h2>
           </div>
           <span id="editor-status" class="task-counter">Сохранено</span>
         </div>
         <p class="editor-note">
-          Изменения сохраняются автоматически как итоговая версия для этого браузера и сразу
-          применяются в обычном режиме на этой же платформе.
+          Меняй тексты и названия прямо здесь. Все изменения сохраняются автоматически
+          в этой онлайн-версии для текущего браузера.
         </p>
         <div id="editor-fields" class="editor-fields"></div>
       </section>
@@ -201,6 +198,7 @@
       </div>
     </div>
 
-    <script src="script.js?v=24"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js?v=28"></script>
   </body>
 </html>

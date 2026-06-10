@@ -2,23 +2,37 @@ const HOUR_MS = 60 * 60 * 1000;
 const STORAGE_KEY = "duckQuestProgress:v1";
 const AUTH_KEY = "duckQuestAuth:v1";
 const TEST_AUTH_KEY = "duckQuestTestAuth:v1";
+const EDITOR_AUTH_KEY = "duckQuestEditorAuth:v1";
 const CONTENT_KEY = "duckQuestContent:v1";
 const DUCK_BANK_KEY = "duckQuestBank:v1";
+const SUPABASE_URL = "https://seggytyatffeuxcmqlof.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Jc9BGLiWgYdF99Qa-i0_jA_nXStNkMb";
+const SUPABASE_CONTENT_TABLE = "duck_quest_content";
+const SUPABASE_CONTENT_ID = "main";
 const queryParams = new URLSearchParams(window.location.search);
 const IS_LOCAL_DEV =
   window.location.protocol === "file:" ||
   ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
+const IS_EDITOR_MODE = sessionStorage.getItem(EDITOR_AUTH_KEY) === "true";
 const IS_TEST_MODE =
-  IS_LOCAL_DEV && (queryParams.has("fast") || sessionStorage.getItem(TEST_AUTH_KEY) === "true");
+  IS_EDITOR_MODE ||
+  (IS_LOCAL_DEV && (queryParams.has("fast") || sessionStorage.getItem(TEST_AUTH_KEY) === "true"));
 const LOCK_MS = IS_TEST_MODE ? 1000 : HOUR_MS;
 const DUCK_SRC = "duck-sticker.png?v=party1";
+const supabaseClient =
+  SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
 const AUTH_LOGIN = "kisik10_06_26";
 const AUTH_PASSWORD_HASH = "62262f9573b15be63a825d2d6213f9e87e17369f1fab97810aee4834ff1dae25";
 const TEST_LOGIN = "guest";
 const TEST_PASSWORD_HASH = "9af15b336e6a9619928537df30b2e6a2376569fcf9d7e773eccede65606529a0";
+const EDITOR_LOGIN = "lianna4353";
+const EDITOR_PASSWORD_HASH = "39af45603772378a1109366921d9e5af203658fbb150071294d8bf0f82ab8976";
 if (queryParams.has("logout")) {
   sessionStorage.removeItem(AUTH_KEY);
   sessionStorage.removeItem(TEST_AUTH_KEY);
+  sessionStorage.removeItem(EDITOR_AUTH_KEY);
 }
 
 const personalConfig = {
@@ -33,10 +47,9 @@ const personalConfig = {
 
 const gameConfig = {
   site: {
-    authEyebrow: "Private Birthday Access",
-    authTitle: "Вход в Duck Quest",
-    authLead:
-      "Эта платформа открывается только главному имениннику. Введи личный логин и пароль, чтобы начать дневной квест.",
+    authEyebrow: "Birthday Access",
+    authTitle: "С днём рождения!",
+    authLead: "Скорее заходи играть",
     heroBadge: "1 задание в час",
     heroEyebrow: "Birthday Duck Quest",
     heroTitle: "По мотивам игры «Утиные истории 2025»",
@@ -234,6 +247,8 @@ function clone(value) {
 
 const defaultGameConfig = clone(gameConfig);
 const ACTIVE_TASK_IDS = new Set(["morning", "food", "meme", "game", "final"]);
+let saveContentTimer = null;
+let lastRemoteContent = "";
 
 function mergeDeep(target, source) {
   Object.entries(source || {}).forEach(([key, value]) => {
@@ -261,11 +276,28 @@ function setByPath(path, value) {
   target[last] = value;
 }
 
-function loadContentOverrides() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(CONTENT_KEY) || "{}");
+function contentSnapshot() {
+  return {
+    site: gameConfig.site,
+    giftLocation: gameConfig.giftLocation,
+    finalMessage: gameConfig.finalMessage,
+    tasks: gameConfig.tasks
+  };
+}
+
+function applyContentOverrides(saved) {
+  if (!saved || typeof saved !== "object") return false;
     if (saved.site?.heroTitle === "10 уточек до подарка") {
       saved.site.heroTitle = gameConfig.site.heroTitle;
+    }
+    if (saved.site?.authTitle === "Вход в Duck Quest") {
+      saved.site.authTitle = gameConfig.site.authTitle;
+    }
+    if (
+      saved.site?.authLead ===
+      "Эта платформа открывается только главному имениннику. Введи личный логин и пароль, чтобы начать дневной квест."
+    ) {
+      saved.site.authLead = gameConfig.site.authLead;
     }
     if (Array.isArray(saved.tasks)) {
       const savedTasksById = new Map(saved.tasks.filter((task) => task?.id).map((task) => [task.id, task]));
@@ -273,9 +305,29 @@ function loadContentOverrides() {
     }
     mergeDeep(gameConfig, saved);
     normalizeInteractiveConfig();
+  return true;
+}
+
+function loadLocalContentOverrides() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CONTENT_KEY) || "{}");
+    applyContentOverrides(saved);
   } catch {
     localStorage.removeItem(CONTENT_KEY);
   }
+}
+
+async function loadRemoteContentOverrides() {
+  if (!supabaseClient) return false;
+  const { data, error } = await supabaseClient
+    .from(SUPABASE_CONTENT_TABLE)
+    .select("content")
+    .eq("id", SUPABASE_CONTENT_ID)
+    .maybeSingle();
+  if (error || !data?.content) return false;
+  lastRemoteContent = JSON.stringify(data.content);
+  localStorage.setItem(CONTENT_KEY, lastRemoteContent);
+  return applyContentOverrides(data.content);
 }
 
 function normalizeInteractiveConfig() {
@@ -306,7 +358,7 @@ function normalizeInteractiveConfig() {
       subtitle: "Первый праздничный артефакт",
       message: "Маленький котенок уже держит торт и официально подтверждает: сегодня день рождения самого любимого кисика.",
       accent: "#ffd84d",
-        image: "assets/artifacts/kisik-card.jpg"
+      image: "assets/artifacts/kisik-card.jpg"
     };
   }
   const chessTask = gameConfig.tasks.find((task) => task.id === "game");
@@ -339,18 +391,40 @@ function normalizeInteractiveConfig() {
   }
 }
 
-function saveContentOverrides() {
-  const content = {
-    site: gameConfig.site,
-    giftLocation: gameConfig.giftLocation,
-    finalMessage: gameConfig.finalMessage,
-    tasks: gameConfig.tasks
-  };
-  localStorage.setItem(CONTENT_KEY, JSON.stringify(content));
-  editorStatus.textContent = "Сохранено";
-  window.setTimeout(() => {
-    if (editorStatus.textContent === "Сохранено") editorStatus.textContent = "Автосохранение";
-  }, 1200);
+async function saveContentOverrides() {
+  const content = contentSnapshot();
+  const serialized = JSON.stringify(content);
+  localStorage.setItem(CONTENT_KEY, serialized);
+  if (supabaseClient) {
+    const { error } = await supabaseClient.from(SUPABASE_CONTENT_TABLE).upsert({
+      id: SUPABASE_CONTENT_ID,
+      content,
+      updated_at: new Date().toISOString()
+    });
+    if (error) {
+      editorStatus.textContent = "Сохранено локально, Supabase не ответил";
+      return;
+    }
+    lastRemoteContent = serialized;
+    editorStatus.textContent = "Автосохранено онлайн";
+    return;
+  }
+  editorStatus.textContent = "Автосохранено локально";
+}
+
+function scheduleContentSave() {
+  if (saveContentTimer) window.clearTimeout(saveContentTimer);
+  editorStatus.textContent = supabaseClient ? "Сохраняю онлайн..." : "Сохраняю локально...";
+  saveContentTimer = window.setTimeout(saveContentOverrides, 600);
+}
+
+function refreshAfterContentEdit() {
+  renderSiteText();
+  renderTasks();
+  renderGallery();
+  renderProgress();
+  if (state.activeTask) openTask(state.activeTask);
+  if (state.activeArtifact) openArtifact(state.activeArtifact);
 }
 
 function setText(selector, value) {
@@ -397,7 +471,11 @@ async function sha256(value) {
 }
 
 function isAuthenticated() {
-  return sessionStorage.getItem(AUTH_KEY) === "true" || (IS_LOCAL_DEV && queryParams.has("auth"));
+  return (
+    sessionStorage.getItem(AUTH_KEY) === "true" ||
+    sessionStorage.getItem(EDITOR_AUTH_KEY) === "true" ||
+    (IS_LOCAL_DEV && queryParams.has("auth"))
+  );
 }
 
 function showQuest() {
@@ -417,10 +495,21 @@ async function handleAuthSubmit(event) {
   const passwordHash = await sha256(password);
   const mainMatch = login === AUTH_LOGIN && passwordHash === AUTH_PASSWORD_HASH;
   const testMatch = IS_LOCAL_DEV && login === TEST_LOGIN && passwordHash === TEST_PASSWORD_HASH;
-  if (mainMatch || testMatch) {
+  const editorMatch = login === EDITOR_LOGIN && passwordHash === EDITOR_PASSWORD_HASH;
+  if (mainMatch || testMatch || editorMatch) {
     sessionStorage.setItem(AUTH_KEY, "true");
+    if (editorMatch) {
+      sessionStorage.setItem(EDITOR_AUTH_KEY, "true");
+      sessionStorage.removeItem(TEST_AUTH_KEY);
+      const editorUrl = new URL(window.location.href);
+      editorUrl.searchParams.delete("logout");
+      editorUrl.searchParams.delete("reset");
+      window.location.replace(editorUrl.toString());
+      return;
+    }
     if (testMatch) {
       sessionStorage.setItem(TEST_AUTH_KEY, "true");
+      sessionStorage.removeItem(EDITOR_AUTH_KEY);
       if (!queryParams.has("fast")) {
         const testUrl = new URL(window.location.href);
         testUrl.searchParams.delete("logout");
@@ -430,6 +519,7 @@ async function handleAuthSubmit(event) {
       }
     } else {
       sessionStorage.removeItem(TEST_AUTH_KEY);
+      sessionStorage.removeItem(EDITOR_AUTH_KEY);
     }
     authError.textContent = "";
     showQuest();
@@ -706,7 +796,7 @@ function renderEditor() {
     ${taskFields}
   `;
   editorFields.dataset.rendered = "true";
-  editorStatus.textContent = "Автосохранение";
+  editorStatus.textContent = supabaseClient ? "Онлайн-редактор" : "Локальный редактор";
 }
 
 function renderAll() {
@@ -716,6 +806,22 @@ function renderAll() {
   renderProgress();
   renderDuckBank();
   renderEditor();
+}
+
+async function syncRemoteContent() {
+  if (!supabaseClient || IS_EDITOR_MODE) return;
+  const { data, error } = await supabaseClient
+    .from(SUPABASE_CONTENT_TABLE)
+    .select("content")
+    .eq("id", SUPABASE_CONTENT_ID)
+    .maybeSingle();
+  if (error || !data?.content) return;
+  const serialized = JSON.stringify(data.content);
+  if (serialized === lastRemoteContent) return;
+  lastRemoteContent = serialized;
+  localStorage.setItem(CONTENT_KEY, serialized);
+  applyContentOverrides(data.content);
+  refreshAfterContentEdit();
 }
 
 function normalizeCode(value) {
@@ -1157,7 +1263,7 @@ function closeTaskDialog() {
   state.chess = null;
 }
 
-function unlockActiveTask() {
+async function unlockActiveTask() {
   if (!state.activeTask) return;
   const alreadyCompleted = completedIds().has(state.activeTask.id);
   if (alreadyCompleted && !IS_TEST_MODE) return;
@@ -1171,6 +1277,9 @@ function unlockActiveTask() {
     saveProgress();
   }
   const artifactTask = state.activeTask;
+  if (artifactTask.artifact?.image) {
+    await loadCanvasImage(artifactTask.artifact.image);
+  }
   window.setTimeout(() => {
     if (submitButton) submitButton.disabled = false;
     closeTaskDialog();
@@ -1194,11 +1303,9 @@ function completeTask(event) {
     return;
   }
   if (state.activeTask.id === "morning") {
-    const card = unlockGame.querySelector(".word-flip-card");
-    if (card) card.classList.add("revealed");
     taskCodeFeedback.textContent = state.activeTask.unlock?.success || "Верно. Первый артефакт открыт.";
     taskCodeFeedback.className = "unlock-feedback success";
-    window.setTimeout(unlockActiveTask, 900);
+    unlockActiveTask();
     return;
   }
   unlockActiveTask();
@@ -1643,27 +1750,27 @@ editorFields.addEventListener("input", (event) => {
   const input = event.target.closest("[data-edit-path]");
   if (!input) return;
   setByPath(input.dataset.editPath, input.value);
-  editorStatus.textContent = "Сохраняю...";
-  saveContentOverrides();
-  renderSiteText();
-  renderTasks();
-  renderGallery();
-  renderProgress();
-  if (state.activeTask) openTask(state.activeTask);
-  if (state.activeArtifact) openArtifact(state.activeArtifact);
+  refreshAfterContentEdit();
+  scheduleContentSave();
 });
 
 authForm.addEventListener("submit", handleAuthSubmit);
 
-loadContentOverrides();
+async function bootApp() {
+  loadLocalContentOverrides();
+  await loadRemoteContentOverrides();
 
-if (isAuthenticated()) {
-  showQuest();
-} else {
-  showAuth();
+  if (isAuthenticated()) {
+    showQuest();
+  } else {
+    showAuth();
+  }
+
+  loadProgress();
+  loadDuckBank();
+  renderAll();
+  setInterval(renderAll, 1000);
+  setInterval(syncRemoteContent, 15000);
 }
 
-loadProgress();
-loadDuckBank();
-renderAll();
-setInterval(renderAll, 1000);
+bootApp();

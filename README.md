@@ -48,17 +48,53 @@ Local-only QA helpers:
 
 Test editor mode:
 
-- Open `http://localhost:8000/?logout=1&reset=1&fast=1`
-- Login: `guest`
-- Password: `0000`
-- The editor appears below the quest and autosaves text changes to this browser.
-- Normal mode on the same deployed origin reads the saved text automatically.
+- Local testing: open `http://localhost:8000/?logout=1&reset=1&fast=1`, login `guest`, password `0000`.
+- Public editor: login `lianna4353`, password `lianna_editor_dr`.
+- The editor appears below the quest and autosaves text changes.
 
 Example:
 
 ```text
 http://localhost:8000/?reset=1&fast=1&auth=1
 ```
+
+## Supabase Content Storage
+
+The site can autosave editor text to Supabase so public visitors receive updated content without redeploying.
+
+1. Create a Supabase project.
+2. Open SQL Editor and run:
+
+```sql
+create table if not exists duck_quest_content (
+  id text primary key,
+  content jsonb not null,
+  updated_at timestamptz default now()
+);
+
+alter table duck_quest_content enable row level security;
+
+create policy "Public read duck quest content"
+on duck_quest_content for select
+to anon
+using (true);
+
+create policy "Public write duck quest content"
+on duck_quest_content for insert
+to anon
+with check (true);
+
+create policy "Public update duck quest content"
+on duck_quest_content for update
+to anon
+using (true)
+with check (true);
+```
+
+3. Copy `Project URL` and `Publishable key` from Supabase Project Settings -> API Keys.
+4. Paste them into `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `script.js`.
+
+Note: this is convenient for a private birthday link, not high-security admin protection.
 
 ## Deployment
 
