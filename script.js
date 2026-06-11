@@ -127,7 +127,7 @@ const gameConfig = {
         label: "Forbes Cover",
         title: "Обложка Forbes",
         subtitle: "Special collector issue",
-        message: "Победа в шахматах открывает обложку человека, который умеет играть на несколько ходов вперед.",
+        message: "Ура! Я даже не сомневалась, забирай артефакт дня - свою обложку из журнала для ТОП-1!",
         accent: "#55e6ff",
         image: "assets/artifacts/forbes-cover.png",
         imageLabel: "Forbes cover"
@@ -400,7 +400,7 @@ function normalizeInteractiveConfig() {
       label: "Forbes Cover",
       title: "Обложка Forbes",
       subtitle: "Special collector issue",
-      message: "Победа в шахматах открывает обложку человека, который умеет играть на несколько ходов вперед.",
+      message: "Ура! Я даже не сомневалась, забирай артефакт дня - свою обложку из журнала для ТОП-1!",
       accent: "#55e6ff",
       image: "assets/artifacts/forbes-cover.png",
       imageLabel: "Forbes cover"
@@ -1523,6 +1523,7 @@ function artifactHTML(task) {
     return `
       <article class="artifact-card full-image-card" style="--artifact-accent: ${artifact.accent}">
         <img class="artifact-full-image" src="${artifact.image}" alt="${artifact.title}" />
+        <p class="artifact-full-caption">${escapeHTML(artifact.message)}</p>
       </article>
     `;
   }
