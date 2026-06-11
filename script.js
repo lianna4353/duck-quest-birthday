@@ -109,26 +109,28 @@ const gameConfig = {
     },
     {
       id: "food",
-      title: "Ответь на вопрос",
-      teaser: "След ведет к любимой еде.",
-      statement: "Еда призналась: она отвлекала, но только ради праздничного настроения.",
-      challenge: "Ответь, какое блюдо сделало бы этот день идеальным.",
+      title: "Выиграй партию шахмат",
+      teaser: "Стратегический ход открывает коллекционный приз.",
+      statement: "Игровая утка выдала квест только избранному персонажу.",
+      challenge: "Выиграй партию белыми против утино-шахматного бота.",
       unlock: {
-        type: "question",
-        title: "Ответь на вопрос",
-        prompt: "Напиши свое любимое блюдо. Ответ сохранится как обещание вкусного момента.",
-        hint: "Для теста подойдет код: вкусно.",
-        code: "вкусно",
-        success: "Вкусная улика принята. Сертификат открыт.",
-        error: "Еда не расслышала. Попробуй код из подсказки."
+        type: "chess",
+        title: "Выиграй партию шахмат",
+        prompt: "Сыграй белыми против утино-шахматного бота. Победа засчитывается автоматически, без кодового слова.",
+        hint: "Выбери белую фигуру и сделай ход. Если проиграешь, партия начнется заново.",
+        code: "",
+        success: "Партия засчитана. Коллекционный артефакт открыт.",
+        error: "Партия еще не выиграна."
       },
       artifact: {
-        type: "duck",
-        label: "Taste Pass",
-        title: "Сертификат на вкусный момент",
-        subtitle: "Погасить при первом удобном аппетите",
-        message: "Ты заслужил что-то вкусное просто потому, что ты есть.",
-        accent: "#ff8b36"
+        type: "game",
+        label: "Chess Prize",
+        title: "Коллекционный приз",
+        subtitle: "За победу в утиных шахматах",
+        message: "За стратегию, терпение и умение выигрывать красиво.",
+        accent: "#55e6ff",
+        image: personalConfig.images.styledHim,
+        imageLabel: "styled hero"
       }
     },
     {
@@ -157,28 +159,26 @@ const gameConfig = {
     },
     {
       id: "game",
-      title: "Выиграй партию шахмат",
-      teaser: "Стратегический ход открывает коллекционный приз.",
-      statement: "Игровая утка выдала квест только избранному персонажу.",
-      challenge: "Сделай победный ход и введи код шахматиста.",
+      title: "Ответь на вопрос",
+      teaser: "След ведет к любимой еде.",
+      statement: "Еда призналась: она отвлекала, но только ради праздничного настроения.",
+      challenge: "Ответь, какое блюдо сделало бы этот день идеальным.",
       unlock: {
-        type: "chess",
-        title: "Выиграй партию шахмат",
-        prompt: "Сыграй белыми против утино-шахматного бота. Победа засчитывается автоматически, без кодового слова.",
-        hint: "Выбери белую фигуру и сделай ход. Если проиграешь, партия начнется заново.",
-        code: "",
-        success: "Партия засчитана. Коллекционный артефакт открыт.",
-        error: "Партия еще не выиграна. Нужен шахматный код."
+        type: "question",
+        title: "Ответь на вопрос",
+        prompt: "Напиши свое любимое блюдо. Ответ сохранится как обещание вкусного момента.",
+        hint: "Для теста подойдет код: вкусно.",
+        code: "вкусно",
+        success: "Вкусная улика принята. Сертификат открыт.",
+        error: "Еда не расслышала. Попробуй код из подсказки."
       },
       artifact: {
-        type: "game",
-        label: "Pop Prize",
-        title: "Коллекционный приз",
-        subtitle: "Фигурка, которую хочется поставить на полку",
-        message: "За стратегию, терпение и умение выигрывать красиво.",
-        accent: "#55e6ff",
-        image: personalConfig.images.styledHim,
-        imageLabel: "styled hero"
+        type: "duck",
+        label: "Taste Pass",
+        title: "Сертификат на вкусный момент",
+        subtitle: "Погасить при первом удобном аппетите",
+        message: "Ты заслужил что-то вкусное просто потому, что ты есть.",
+        accent: "#ff8b36"
       }
     },
     {
@@ -376,10 +376,62 @@ function normalizeInteractiveConfig() {
     };
   }
   const chessTask = gameConfig.tasks.find((task) => task.id === "game");
-  if (chessTask?.unlock) {
-    chessTask.unlock.code = "";
-    chessTask.unlock.prompt = "Сыграй белыми против утино-шахматного бота. Победа засчитывается автоматически, без кодового слова.";
-    chessTask.unlock.hint = "Выбери белую фигуру и сделай ход. Если проиграешь, партия начнется заново.";
+  const secondTask = gameConfig.tasks.find((task) => task.id === "food");
+  if (secondTask) {
+    Object.assign(secondTask, {
+      title: "Выиграй партию шахмат",
+      teaser: "Стратегический ход открывает коллекционный приз.",
+      statement: "Игровая утка выдала квест только избранному персонажу.",
+      challenge: "Выиграй партию белыми против утино-шахматного бота."
+    });
+    secondTask.unlock = {
+      ...(secondTask.unlock || {}),
+      type: "chess",
+      title: "Выиграй партию шахмат",
+      prompt: "Сыграй белыми против утино-шахматного бота. Победа засчитывается автоматически, без кодового слова.",
+      hint: "Выбери белую фигуру и сделай ход. Если проиграешь, партия начнется заново.",
+      code: "",
+      success: secondTask.unlock?.success || "Партия засчитана. Коллекционный артефакт открыт.",
+      error: secondTask.unlock?.error || "Партия еще не выиграна."
+    };
+    secondTask.artifact = {
+      ...(secondTask.artifact || {}),
+      type: "game",
+      label: secondTask.artifact?.label || "Chess Prize",
+      title: secondTask.artifact?.title || "Коллекционный приз",
+      subtitle: secondTask.artifact?.subtitle || "За победу в утиных шахматах",
+      message: secondTask.artifact?.message || "За стратегию, терпение и умение выигрывать красиво.",
+      accent: secondTask.artifact?.accent || "#55e6ff",
+      image: personalConfig.images.styledHim,
+      imageLabel: "styled hero"
+    };
+  }
+  if (chessTask) {
+    Object.assign(chessTask, {
+      title: "Ответь на вопрос",
+      teaser: "След ведет к любимой еде.",
+      statement: "Еда призналась: она отвлекала, но только ради праздничного настроения.",
+      challenge: "Ответь, какое блюдо сделало бы этот день идеальным."
+    });
+    chessTask.unlock = {
+      ...(chessTask.unlock || {}),
+      type: "question",
+      title: "Ответь на вопрос",
+      prompt: "Напиши свое любимое блюдо. Ответ сохранится как обещание вкусного момента.",
+      hint: "Для теста подойдет код: вкусно.",
+      code: "вкусно",
+      success: chessTask.unlock?.success || "Вкусная улика принята. Сертификат открыт.",
+      error: chessTask.unlock?.error || "Еда не расслышала. Попробуй код из подсказки."
+    };
+    chessTask.artifact = {
+      ...(chessTask.artifact || {}),
+      type: "duck",
+      label: chessTask.artifact?.label || "Taste Pass",
+      title: chessTask.artifact?.title || "Сертификат на вкусный момент",
+      subtitle: chessTask.artifact?.subtitle || "Погасить при первом удобном аппетите",
+      message: chessTask.artifact?.message || "Ты заслужил что-то вкусное просто потому, что ты есть.",
+      accent: chessTask.artifact?.accent || "#ff8b36"
+    };
   }
   const tarotTask = gameConfig.tasks.find((task) => task.id === "compliment");
   if (tarotTask) {
