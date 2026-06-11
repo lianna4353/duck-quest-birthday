@@ -998,10 +998,14 @@ function unlockSceneHTML(type) {
     `;
   }
   if (type === "chess") {
+    const editorWinButton = IS_EDITOR_MODE
+      ? `<button class="mini-action editor-win-chess" type="button" data-editor-win-chess>Засчитать победу редактору</button>`
+      : "";
     return `
       <div class="unlock-scene chess-game">
         <div class="chess-status" data-chess-status>Твой ход: белые</div>
         <div class="chess-board" data-chess-board></div>
+        ${editorWinButton}
       </div>
     `;
   }
@@ -1147,6 +1151,15 @@ function restartChessGame(message = "Новая партия. Твой ход: �
     initChessGame();
     renderChessGame(message);
   }, 900);
+}
+
+function editorWinChess() {
+  if (!IS_EDITOR_MODE || !state.activeTask || state.activeTask.unlock?.type !== "chess") return;
+  if (state.chess) state.chess.ended = true;
+  renderChessGame("Победа засчитана в режиме редактора");
+  taskCodeFeedback.textContent = "Редакторская проверка: открываю шахматный артефакт.";
+  taskCodeFeedback.className = "unlock-feedback success";
+  window.setTimeout(unlockActiveTask, 420);
 }
 
 function isWhite(piece) {
@@ -1848,6 +1861,11 @@ unlockGame.addEventListener("click", (event) => {
   const chessCell = event.target.closest("[data-chess-board] .chess-cell");
   if (chessCell) {
     handleChessClick(chessCell);
+    return;
+  }
+  const editorWinChessButton = event.target.closest("[data-editor-win-chess]");
+  if (editorWinChessButton) {
+    editorWinChess();
     return;
   }
   const oracleButton = event.target.closest("[data-open-oracle]");
