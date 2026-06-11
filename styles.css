@@ -2239,6 +2239,25 @@ h2 {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
 }
 
+.artifact-card.full-image-card {
+  width: min(100%, 430px);
+  min-height: 0;
+  padding: 0;
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(8, 12, 24, 0.82);
+}
+
+.artifact-card.full-image-card::before {
+  display: none;
+}
+
+.artifact-full-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 24px;
+}
+
 .artifact-card::before {
   content: "";
   position: absolute;

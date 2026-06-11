@@ -123,14 +123,14 @@ const gameConfig = {
         error: "Партия еще не выиграна."
       },
       artifact: {
-        type: "game",
-        label: "Chess Prize",
-        title: "Коллекционный приз",
-        subtitle: "За победу в утиных шахматах",
-        message: "За стратегию, терпение и умение выигрывать красиво.",
+        type: "full-image",
+        label: "Forbes Cover",
+        title: "Обложка Forbes",
+        subtitle: "Special collector issue",
+        message: "Победа в шахматах открывает обложку человека, который умеет играть на несколько ходов вперед.",
         accent: "#55e6ff",
-        image: personalConfig.images.styledHim,
-        imageLabel: "styled hero"
+        image: "assets/artifacts/forbes-cover.png",
+        imageLabel: "Forbes cover"
       }
     },
     {
@@ -396,14 +396,14 @@ function normalizeInteractiveConfig() {
     };
     secondTask.artifact = {
       ...(secondTask.artifact || {}),
-      type: "game",
-      label: secondTask.artifact?.label || "Chess Prize",
-      title: secondTask.artifact?.title || "Коллекционный приз",
-      subtitle: secondTask.artifact?.subtitle || "За победу в утиных шахматах",
-      message: secondTask.artifact?.message || "За стратегию, терпение и умение выигрывать красиво.",
-      accent: secondTask.artifact?.accent || "#55e6ff",
-      image: personalConfig.images.styledHim,
-      imageLabel: "styled hero"
+      type: "full-image",
+      label: "Forbes Cover",
+      title: "Обложка Forbes",
+      subtitle: "Special collector issue",
+      message: "Победа в шахматах открывает обложку человека, который умеет играть на несколько ходов вперед.",
+      accent: "#55e6ff",
+      image: "assets/artifacts/forbes-cover.png",
+      imageLabel: "Forbes cover"
     };
   }
   if (chessTask) {
@@ -1506,6 +1506,13 @@ function artifactHTML(task) {
       </article>
     `;
   }
+  if (artifact.type === "full-image" && artifact.image) {
+    return `
+      <article class="artifact-card full-image-card" style="--artifact-accent: ${artifact.accent}">
+        <img class="artifact-full-image" src="${artifact.image}" alt="${artifact.title}" />
+      </article>
+    `;
+  }
   const visualLabel =
     artifact.imageLabel ||
     (artifact.type === "portrait" ? "photo slot" : artifact.type === "glossy" ? "your photo" : "duck art");
@@ -1751,6 +1758,13 @@ function drawKittenCanvas(ctx) {
 async function downloadArtifact() {
   if (!state.activeArtifact) return;
   const task = state.activeArtifact;
+  if (task.artifact.type === "full-image" && task.artifact.image) {
+    const link = document.createElement("a");
+    link.download = `${task.id}-forbes-cover.png`;
+    link.href = task.artifact.image;
+    link.click();
+    return;
+  }
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
   canvas.height = 1440;
