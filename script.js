@@ -352,30 +352,26 @@ function normalizeInteractiveConfig() {
   gameConfig.tasks = gameConfig.tasks.filter((task) => ACTIVE_TASK_IDS.has(task.id));
   const morningTask = gameConfig.tasks.find((task) => task.id === "morning");
   if (morningTask) {
-    Object.assign(morningTask, {
-      title: "Угадай слово",
-      teaser: "Первый артефакт спрятан в пропущенном слове.",
-      statement: "Утка спрятала первый артефакт в пропущенном слове.",
-      challenge: "ЭЭЭЭЭЙ, _______! У кого сегодня день рождения?"
-    });
     morningTask.unlock = {
       ...(morningTask.unlock || {}),
       type: "word",
-      title: "Угадай слово",
-      prompt: "ЭЭЭЭЭЙ, _______! У кого сегодня день рождения?",
-      hint: "Необходимо указать пропущенное слово.",
       code: "кисик",
-      success: "Верно. Первый артефакт открыт.",
-      error: "Почти. Введи то самое ласковое слово."
+      title: morningTask.unlock?.title || "Угадай слово",
+      prompt: morningTask.unlock?.prompt || morningTask.challenge || "ЭЭЭЭЭЙ, _______! У кого сегодня день рождения?",
+      hint: morningTask.unlock?.hint || "Необходимо указать пропущенное слово.",
+      success: morningTask.unlock?.success || "Верно. Первый артефакт открыт.",
+      error: morningTask.unlock?.error || "Почти. Введи то самое ласковое слово."
     };
     morningTask.artifact = {
       ...(morningTask.artifact || {}),
       type: "kitten",
-      label: "Kisik Card",
-      title: "С днём рождения, кисик!",
-      subtitle: "Первый праздничный артефакт",
-      message: "Маленький котенок уже держит торт и официально подтверждает: сегодня день рождения самого любимого кисика.",
-      accent: "#ffd84d",
+      label: morningTask.artifact?.label || "Kisik Card",
+      title: morningTask.artifact?.title || "С днём рождения, кисик!",
+      subtitle: morningTask.artifact?.subtitle || "Первый праздничный артефакт",
+      message:
+        morningTask.artifact?.message ||
+        "Маленький котенок уже держит торт и официально подтверждает: сегодня день рождения самого любимого кисика.",
+      accent: morningTask.artifact?.accent || "#ffd84d",
       image: "assets/artifacts/kisik-card.jpg"
     };
   }
