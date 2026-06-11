@@ -889,6 +889,61 @@ h2 {
   opacity: 0.56;
 }
 
+.task-card.secret-task {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 136px;
+  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 216, 77, 0.14), transparent 46%),
+    rgba(8, 12, 24, 0.7);
+}
+
+.task-card.secret-task:hover {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.18);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 216, 77, 0.16), transparent 46%),
+    rgba(8, 12, 24, 0.74);
+}
+
+.secret-task-inner {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+}
+
+.secret-task-duck {
+  width: 72px;
+  filter: grayscale(0.15) drop-shadow(0 14px 18px rgba(0, 0, 0, 0.42));
+  opacity: 0.78;
+}
+
+.secret-lock {
+  position: absolute;
+  right: 3px;
+  bottom: 5px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 50%;
+  background: rgba(10, 15, 29, 0.82);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32);
+  font-size: 0.9rem;
+}
+
+.task-card.secret-task .task-status {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+}
+
 .task-card-top {
   display: flex;
   align-items: center;

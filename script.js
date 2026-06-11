@@ -1,4 +1,8 @@
-const HOUR_MS = 60 * 60 * 1000;
+const MINUTE_MS = 60 * 1000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+const VLADIVOSTOK_OFFSET_MS = 10 * HOUR_MS;
+const QUEST_OPEN_HOUR = 7;
 const STORAGE_KEY = "duckQuestProgress:v1";
 const AUTH_KEY = "duckQuestAuth:v1";
 const TEST_AUTH_KEY = "duckQuestTestAuth:v1";
@@ -17,7 +21,6 @@ const IS_EDITOR_MODE = sessionStorage.getItem(EDITOR_AUTH_KEY) === "true";
 const IS_TEST_MODE =
   IS_EDITOR_MODE ||
   (IS_LOCAL_DEV && (queryParams.has("fast") || sessionStorage.getItem(TEST_AUTH_KEY) === "true"));
-const LOCK_MS = IS_TEST_MODE ? 1000 : HOUR_MS;
 const DUCK_SRC = "duck-sticker.png?v=party1";
 const supabaseClient =
   SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase
@@ -50,11 +53,11 @@ const gameConfig = {
     authEyebrow: "Birthday Access",
     authTitle: "С днём рождения!",
     authLead: "Скорее заходи играть",
-    heroBadge: "1 задание в час",
+    heroBadge: "Режим работы с 07:00 до 00:00",
     heroEyebrow: "Birthday Duck Quest",
     heroTitle: "По мотивам игры «Утиные истории 2025»",
     heroLead:
-      "Проходи задания в течение дня. После каждого интерактива открывается артефакт, а следующая миссия станет доступна через час.",
+      "Проходи задания по одному в день. После каждого интерактива открывается артефакт, а следующая миссия станет доступна на следующий день с 07:00 по Владивостоку.",
     progressLabel: "Прогресс дня",
     tasksEyebrow: "Маршрут",
     tasksTitle: "Задания на день",
@@ -289,6 +292,17 @@ function applyContentOverrides(saved) {
   if (!saved || typeof saved !== "object") return false;
     if (saved.site?.heroTitle === "10 уточек до подарка") {
       saved.site.heroTitle = gameConfig.site.heroTitle;
+    }
+    if (saved.site?.heroBadge === "1 задание в час") {
+      saved.site.heroBadge = gameConfig.site.heroBadge;
+    }
+    if (
+      saved.site?.heroLead ===
+        "Проходи задания в течение дня. После каждого интерактива открывается артефакт, а следующая миссия станет доступна через час." ||
+      saved.site?.heroLead ===
+        "Проходи задания в течение дня. После каждого задания открывается поздравительная карточка-артефакт, а следующая миссия станет доступна через час."
+    ) {
+      saved.site.heroLead = gameConfig.site.heroLead;
     }
     if (saved.site?.authTitle === "Вход в Duck Quest") {
       saved.site.authTitle = gameConfig.site.authTitle;
@@ -580,9 +594,45 @@ function lastCompletedAt() {
   return last ? last.completedAt : 0;
 }
 
+function vladivostokParts(timestamp = Date.now()) {
+  const vladivostokDate = new Date(timestamp + VLADIVOSTOK_OFFSET_MS);
+  return {
+    year: vladivostokDate.getUTCFullYear(),
+    month: vladivostokDate.getUTCMonth(),
+    day: vladivostokDate.getUTCDate(),
+    hour: vladivostokDate.getUTCHours(),
+    minute: vladivostokDate.getUTCMinutes(),
+    second: vladivostokDate.getUTCSeconds()
+  };
+}
+
+function vladivostokDayStart(timestamp = Date.now()) {
+  const parts = vladivostokParts(timestamp);
+  return Date.UTC(parts.year, parts.month, parts.day) - VLADIVOSTOK_OFFSET_MS;
+}
+
+function questOpenAt(timestamp = Date.now()) {
+  return vladivostokDayStart(timestamp) + QUEST_OPEN_HOUR * HOUR_MS;
+}
+
+function isQuestOpenNow(timestamp = Date.now()) {
+  return timestamp >= questOpenAt(timestamp);
+}
+
+function nextQuestOpenAt(timestamp = Date.now()) {
+  const openToday = questOpenAt(timestamp);
+  return timestamp < openToday ? openToday : openToday + DAY_MS;
+}
+
 function timeUntilNext(now = Date.now()) {
-  if (state.completed.length === 0 || state.completed.length >= gameConfig.tasks.length) return 0;
-  return Math.max(0, lastCompletedAt() + LOCK_MS - now);
+  if (IS_TEST_MODE) return 0;
+  if (state.completed.length >= gameConfig.tasks.length) return 0;
+  if (state.completed.length === 0) {
+    return isQuestOpenNow(now) ? 0 : Math.max(0, questOpenAt(now) - now);
+  }
+  const last = lastCompletedAt();
+  const nextOpen = Math.max(nextQuestOpenAt(last), questOpenAt(now));
+  return Math.max(0, nextOpen - now);
 }
 
 function formatDuration(ms) {
@@ -600,14 +650,15 @@ function formatDuration(ms) {
 function taskStatus(index, task) {
   if (completedIds().has(task.id)) return "done";
   if (IS_TEST_MODE) return "available";
-  if (index === nextTaskIndex() && timeUntilNext() === 0) return "available";
+  const nextIndex = nextTaskIndex();
+  if (index === nextIndex && timeUntilNext() === 0) return "available";
   return "locked";
 }
 
 function taskMeta(index, status) {
   if (status === "done") return IS_TEST_MODE ? "Открыть интерактив еще раз" : "Открыть карточку";
   if (status === "available") return "Можно пройти сейчас";
-  if (index === nextTaskIndex()) return `Откроется через ${formatDuration(timeUntilNext())}`;
+  if (index === nextTaskIndex()) return `Откроется с 07:00 по Владивостоку`;
   return "Откроется после предыдущих миссий";
 }
 
@@ -627,6 +678,17 @@ function renderTasks() {
     .map((task, index) => {
       const status = taskStatus(index, task);
       const label = status === "done" ? (IS_TEST_MODE ? "Пройдено" : "Карточка в галерее") : status === "available" ? "Открыто" : "Закрыто";
+      if (status === "locked") {
+        return `
+          <button class="task-card locked secret-task" type="button" data-id="${task.id}" aria-label="Задание ${index + 1} пока закрыто">
+            <div class="secret-task-inner">
+              <img class="duck-sticker secret-task-duck" src="${DUCK_SRC}" alt="" />
+              <span class="secret-lock" aria-hidden="true">&#128274;</span>
+            </div>
+            <span class="task-status">${label}</span>
+          </button>
+        `;
+      }
       return `
         <button class="task-card ${status}" type="button" data-id="${task.id}">
           <div class="task-card-top">
@@ -671,8 +733,10 @@ function renderProgress() {
     nextUnlock.textContent = "Все артефакты собраны. Финальный подарок открыт.";
   } else if (waitMs === 0) {
     nextUnlock.textContent = `Задание ${found + 1} уже доступно`;
+  } else if (found === 0) {
+    nextUnlock.textContent = `Первое задание откроется в 07:00 по Владивостоку через ${formatDuration(waitMs)}`;
   } else {
-    nextUnlock.textContent = `Следующее задание откроется через ${formatDuration(waitMs)}`;
+    nextUnlock.textContent = `Следующее задание откроется в 07:00 по Владивостоку через ${formatDuration(waitMs)}`;
   }
 }
 
