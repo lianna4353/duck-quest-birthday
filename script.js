@@ -224,6 +224,7 @@ const questApp = document.querySelector("#quest-app");
 const editorPanel = document.querySelector("#editor-panel");
 const editorFields = document.querySelector("#editor-fields");
 const editorStatus = document.querySelector("#editor-status");
+const publishLocalContentButton = document.querySelector("#publish-local-content");
 const taskGrid = document.querySelector("#task-grid");
 const artifactGallery = document.querySelector("#artifact-gallery");
 const duckCount = document.querySelector("#duck-count");
@@ -324,10 +325,13 @@ function applyContentOverrides(saved) {
 
 function loadLocalContentOverrides() {
   try {
-    const saved = JSON.parse(localStorage.getItem(CONTENT_KEY) || "{}");
-    applyContentOverrides(saved);
+    const raw = localStorage.getItem(CONTENT_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    return applyContentOverrides(saved);
   } catch {
     localStorage.removeItem(CONTENT_KEY);
+    return false;
   }
 }
 
@@ -424,6 +428,15 @@ async function saveContentOverrides() {
     return;
   }
   editorStatus.textContent = "Автосохранено локально";
+}
+
+async function publishLocalContentOnline() {
+  if (!supabaseClient) {
+    editorStatus.textContent = "Supabase не подключен";
+    return;
+  }
+  editorStatus.textContent = "Публикую локальные правки онлайн...";
+  await saveContentOverrides();
 }
 
 function scheduleContentSave() {
@@ -861,6 +874,7 @@ function renderEditor() {
   `;
   editorFields.dataset.rendered = "true";
   editorStatus.textContent = supabaseClient ? "Онлайн-редактор" : "Локальный редактор";
+  if (publishLocalContentButton) publishLocalContentButton.hidden = !supabaseClient;
 }
 
 function renderAll() {
@@ -1817,12 +1831,17 @@ editorFields.addEventListener("input", (event) => {
   refreshAfterContentEdit();
   scheduleContentSave();
 });
+if (publishLocalContentButton) {
+  publishLocalContentButton.addEventListener("click", publishLocalContentOnline);
+}
 
 authForm.addEventListener("submit", handleAuthSubmit);
 
 async function bootApp() {
-  loadLocalContentOverrides();
-  await loadRemoteContentOverrides();
+  const hasLocalContent = loadLocalContentOverrides();
+  if (!IS_TEST_MODE || !hasLocalContent) {
+    await loadRemoteContentOverrides();
+  }
 
   if (isAuthenticated()) {
     showQuest();

@@ -735,6 +735,10 @@ h2 {
   line-height: 1.45;
 }
 
+.editor-publish-button {
+  margin-bottom: 18px;
+}
+
 .editor-fields {
   display: grid;
   gap: 12px;
